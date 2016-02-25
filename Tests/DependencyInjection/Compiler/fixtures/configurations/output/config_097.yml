@@ -2,8 +2,8 @@ easy_admin:
     entities:
         Category:
             class: JavierEguiluz\Bundle\EasyAdminBundle\Tests\Fixtures\AppTestBundle\Entity\Category
-            label: Category
             name: Category
+            label: Category
             edit:
                 fields:
                     name:
@@ -238,17 +238,17 @@ easy_admin:
                         label: action.delete
                         css_class: 'text-danger action-delete'
                         icon: null
-                    search:
-                        name: search
-                        type: method
-                        label: action.search
-                        css_class: ' action-search'
-                        icon: null
                     new:
                         name: new
                         type: method
                         label: action.new
                         css_class: ' action-new'
+                        icon: null
+                    search:
+                        name: search
+                        type: method
+                        label: action.search
+                        css_class: ' action-search'
                         icon: null
             new:
                 fields:
