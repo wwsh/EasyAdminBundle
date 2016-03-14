@@ -2,8 +2,8 @@
 
 namespace JavierEguiluz\Bundle\EasyAdminBundle\EventListener;
 
-use Doctrine\Bundle\DoctrineBundle\Registry;
-use JavierEguiluz\Bundle\EasyAdminBundle\Exception\EntityNotFoundException;
+use JavierEguiluz\Bundle\EasyAdminBundle\Exception\ElementNotFoundException;
+use JavierEguiluz\Bundle\EasyAdminBundle\Service\DoctrineDataProxyService;
 use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -22,16 +22,19 @@ class RequestPostInitializeListener
     /** @var RequestStack|null */
     private $requestStack;
 
-    /** @var Registry */
-    private $doctrine;
+    /**
+     * @var DoctrineDataProxyService
+     */
+    private $dataService;
+
 
     /**
-     * @param Registry          $doctrine
-     * @param RequestStack|null $requestStack
+     * @param DoctrineDataProxyService|null $doctrine
+     * @param RequestStack|null             $requestStack
      */
-    public function __construct(Registry $doctrine, RequestStack $requestStack = null)
+    public function __construct(DoctrineDataProxyService $dataService = null, RequestStack $requestStack = null)
     {
-        $this->doctrine = $doctrine;
+        $this->dataService  = $dataService;
         $this->requestStack = $requestStack;
     }
 
@@ -58,30 +61,33 @@ class RequestPostInitializeListener
             return;
         }
 
+        if (null === $this->dataService) {
+            return;
+        }
+
         $this->request->attributes->set('easyadmin', array(
-            'entity' => $entity = $event->getArgument('entity'),
-            'view' => $this->request->query->get('action', 'list'),
-            'item' => ($id = $this->request->query->get('id')) ? $this->findCurrentItem($entity, $id) : null,
+            'element' => $element = $event->getArgument('element'),
+            'view'    => $this->request->query->get('action', 'list'),
+            'item'    => ($id = $this->request->query->get('id')) ? $this->findCurrentItem($element, $id) : null,
         ));
     }
 
     /**
-     * Looks for the object that corresponds to the selected 'id' of the current entity.
+     * Looks for the object that corresponds to the selected 'id' of the current entity/document.
      *
-     * @param array $entityConfig
-     * @param mixed $itemId
+     * @param array $elementConfig
+     * @param mixed $elementId
      *
      * @return object The entity
      *
-     * @throws EntityNotFoundException
+     * @throws ElementNotFoundException
      */
-    private function findCurrentItem(array $entityConfig, $itemId)
+    private function findCurrentItem(array $elementConfig, $elementId)
     {
-        $manager = $this->doctrine->getManagerForClass($entityConfig['class']);
-        if (null === $entity = $manager->getRepository($entityConfig['class'])->find($itemId)) {
-            throw new EntityNotFoundException(array('entity' => $entityConfig, 'entity_id' => $itemId));
+        if (null === $element = $this->dataService->findOne($elementConfig['class'], $elementId)) {
+            throw new ElementNotFoundException(array('element' => $elementConfig, 'element_id' => $elementId));
         }
 
-        return $entity;
+        return $element;
     }
 }

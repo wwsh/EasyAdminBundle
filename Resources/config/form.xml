@@ -43,6 +43,12 @@
             <tag name="easyadmin.form.type.configurator" priority="-20"/>
         </service>
 
+        <service id="easyadmin.form.type.configurator.document" public="false"
+                 class="JavierEguiluz\Bundle\EasyAdminBundle\Form\Type\Configurator\DocumentTypeConfigurator">
+            <argument type="service" id="easyadmin.form.type_guesser_chain" />
+            <tag name="easyadmin.form.type.configurator" priority="-30"/>
+        </service>
+
         <service id="easyadmin.form.type.configurator.ivory_ckeditor" public="false"
                  class="JavierEguiluz\Bundle\EasyAdminBundle\Form\Type\Configurator\IvoryCKEditorTypeConfigurator">
             <tag name="easyadmin.form.type.configurator" priority="-130"/>

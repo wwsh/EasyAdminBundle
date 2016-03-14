@@ -5,8 +5,8 @@
         {% set attr = attr|merge({
             'class': attr.class|default('') ~ ' ' ~ easyadmin.view ~ '-form',
             'data-view': easyadmin.view,
-            'data-entity': easyadmin.entity.name,
-            'data-entity-id': attribute(value, easyadmin.entity.primary_key_field_name),
+            'data-entity': easyadmin.element.name,
+            'data-entity-id': attribute(value, easyadmin.element.primary_key_field_name),
         }) %}
     {% endif %}
 
@@ -383,7 +383,7 @@
 
 {# Easy admin form type #}
 {% block easyadmin_widget %}
-    {% set _trans_parameters = { '%entity_name%':  easyadmin.entity.name|trans, '%entity_label%': easyadmin.entity.label|trans } %}
+    {% set _trans_parameters = { '%entity_name%':  easyadmin.element.name|trans, '%entity_label%': easyadmin.element.label|trans } %}
 
     {% if form.vars.errors|length > 0 %}
         {{ form_errors(form) }}
@@ -408,14 +408,14 @@
                         </button>
 
                         {% set _entity_actions = (easyadmin.view == 'new')
-                            ? easyadmin_get_actions_for_new_item(easyadmin.entity.name)
-                            : easyadmin_get_actions_for_edit_item(easyadmin.entity.name) %}
+                            ? easyadmin_get_actions_for_new_item(easyadmin.element.name)
+                            : easyadmin_get_actions_for_edit_item(easyadmin.element.name) %}
 
                         {% set _entity_id = (easyadmin.view == 'new')
                             ? null
-                            : attribute(easyadmin.item, easyadmin.entity.primary_key_field_name) %}
+                            : attribute(easyadmin.item, easyadmin.element.primary_key_field_name) %}
 
-                        {% set _request_parameters = { entity: easyadmin.entity.name, referer: app.request.query.get('referer') } %}
+                        {% set _request_parameters = { entity: easyadmin.element.name, referer: app.request.query.get('referer') } %}
 
                         {{ include('@EasyAdmin/default/includes/_actions.html.twig', {
                             actions: _entity_actions,

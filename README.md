@@ -30,7 +30,7 @@ with unprecedented simplicity.
 **Requirements**
 
   * Symfony 2.3+ or 3.x applications (Silex not supported).
-  * Doctrine ORM entities (Doctrine ODM and Propel not supported).
+  * Doctrine ORM entities and ODM documents (Propel not supported).
   * Entities with composite keys or using inheritance are not supported.
 
 Documentation

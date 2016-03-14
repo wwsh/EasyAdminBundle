@@ -18,6 +18,8 @@ use JavierEguiluz\Bundle\EasyAdminBundle\Event\EasyAdminEvents;
 use JavierEguiluz\Bundle\EasyAdminBundle\Exception\ForbiddenActionException;
 use JavierEguiluz\Bundle\EasyAdminBundle\Exception\NoEntitiesConfiguredException;
 use JavierEguiluz\Bundle\EasyAdminBundle\Exception\UndefinedEntityException;
+use JavierEguiluz\Bundle\EasyAdminBundle\Service\DataServiceInterface;
+use JavierEguiluz\Bundle\EasyAdminBundle\Service\DoctrineDataProxyService;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Pagerfanta;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -44,8 +46,61 @@ class AdminController extends Controller
     /** @var Request */
     protected $request;
 
-    /** @var EntityManager */
-    protected $em;
+    /**
+     * @var DoctrineDataProxyService
+     */
+    protected $dataService;
+
+    /**
+     * Utility method which initializes the configuration of the entity on which
+     * the user is performing the action.
+     *
+     * @param Request $request
+     */
+    protected function initialize(Request $request)
+    {
+        $this->dispatch(EasyAdminEvents::PRE_INITIALIZE);
+
+        $this->config = $this->container->getParameter('easyadmin.config');
+
+        if (0 === count($this->config['entities'])) {
+            throw new NoEntitiesConfiguredException();
+        }
+
+        // this condition happens when accessing the backend homepage, which
+        // then redirects to the 'list' action of the first configured entity
+        if (null === $elementName = $request->query->get('element')) {
+            return;
+        }
+
+        // @todo: Not really consequent: "element" from URL is checked against "entities"
+
+        if (!array_key_exists($elementName, $this->config['entities'])) {
+            throw new UndefinedEntityException(array('entity_name' => $elementName));
+        }
+
+        $this->element = $this->get('easyadmin.configurator')->getElementConfiguration($elementName);
+
+        if (!$request->query->has('sortField')) {
+            $request->query->set('sortField', $this->element['primary_key_field_name']);
+        }
+
+        if (!$request->query->has('sortDirection') || !in_array(strtoupper($request->query->get('sortDirection')),
+                array('ASC', 'DESC'))
+        ) {
+            $request->query->set('sortDirection', 'DESC');
+        }
+
+        $this->dataService = $this->get('doctrine_data_proxy_service');
+        $this->dataService->setEventDispatcherController($this); // the dataService can also dispatch events
+
+        $this->request = $request;
+
+        $this->dispatch(EasyAdminEvents::POST_INITIALIZE);
+    }
+
+//    protected $em;
+
 
     /**
      * @Route("/", name="easyadmin")
@@ -96,57 +151,14 @@ class AdminController extends Controller
             ->setSharedMaxAge(600)
             ;
     }
-
-    /**
-     * Utility method which initializes the configuration of the entity on which
-     * the user is performing the action.
-     *
-     * @param Request $request
-     */
-    protected function initialize(Request $request)
-    {
-        $this->dispatch(EasyAdminEvents::PRE_INITIALIZE);
-
-        $this->config = $this->container->getParameter('easyadmin.config');
-
-        if (0 === count($this->config['entities'])) {
-            throw new NoEntitiesConfiguredException();
-        }
-
-        // this condition happens when accessing the backend homepage, which
-        // then redirects to the 'list' action of the first configured entity
-        if (null === $entityName = $request->query->get('entity')) {
-            return;
-        }
-
-        if (!array_key_exists($entityName, $this->config['entities'])) {
-            throw new UndefinedEntityException(array('entity_name' => $entityName));
-        }
-
-        $this->entity = $this->get('easyadmin.configurator')->getEntityConfiguration($entityName);
-
-        if (!$request->query->has('sortField')) {
-            $request->query->set('sortField', $this->entity['primary_key_field_name']);
-        }
-
-        if (!$request->query->has('sortDirection') || !in_array(strtoupper($request->query->get('sortDirection')), array('ASC', 'DESC'))) {
-            $request->query->set('sortDirection', 'DESC');
-        }
-
-        $this->em = $this->getDoctrine()->getManagerForClass($this->entity['class']);
-
-        $this->request = $request;
-
-        $this->dispatch(EasyAdminEvents::POST_INITIALIZE);
-    }
-
+    
     protected function dispatch($eventName, array $arguments = array())
     {
         $arguments = array_replace(array(
-            'config' => $this->config,
-            'em' => $this->em,
-            'entity' => $this->entity,
-            'request' => $this->request,
+            'config'      => $this->config,
+            'dataService' => $this->dataService,
+            'entity'      => $this->entity,
+            'request'     => $this->request,
         ), $arguments);
 
         $subject = isset($arguments['paginator']) ? $arguments['paginator'] : $arguments['entity'];
@@ -164,8 +176,10 @@ class AdminController extends Controller
     {
         $this->dispatch(EasyAdminEvents::PRE_LIST);
 
-        $fields = $this->entity['list']['fields'];
-        $paginator = $this->findAll($this->entity['class'], $this->request->query->get('page', 1), $this->config['list']['max_results'], $this->request->query->get('sortField'), $this->request->query->get('sortDirection'));
+        $fields    = $this->entity['list']['fields'];
+        $paginator = $this->dataService->findAll($this->element['class'], $this->request->query->get('page', 1),
+            $this->config['list']['max_results'], $this->request->query->get('sortField'),
+            $this->request->query->get('sortDirection'));
 
         $this->dispatch(EasyAdminEvents::POST_LIST, array('paginator' => $paginator));
 
@@ -212,7 +226,8 @@ class AdminController extends Controller
             $this->dispatch(EasyAdminEvents::PRE_UPDATE, array('entity' => $entity));
 
             $this->executeDynamicMethod('preUpdate<EntityName>Entity', array($entity));
-            $this->em->flush();
+
+            $this->dataService->flush($entity);
 
             $this->dispatch(EasyAdminEvents::POST_UPDATE, array('entity' => $entity));
 
@@ -287,8 +302,7 @@ class AdminController extends Controller
 
             $this->executeDynamicMethod('prePersist<EntityName>Entity', array($entity));
 
-            $this->em->persist($entity);
-            $this->em->flush();
+            $this->dataService->persistAndFlush($entity);
 
             $this->dispatch(EasyAdminEvents::POST_PERSIST, array('entity' => $entity));
 
@@ -338,8 +352,9 @@ class AdminController extends Controller
 
             $this->executeDynamicMethod('preRemove<EntityName>Entity', array($entity));
 
-            $this->em->remove($entity);
-            $this->em->flush();
+
+            $this->dataService->remove($entity)
+                              ->flush($entity);
 
             $this->dispatch(EasyAdminEvents::POST_REMOVE, array('entity' => $entity));
         }
@@ -363,7 +378,16 @@ class AdminController extends Controller
         $this->dispatch(EasyAdminEvents::PRE_SEARCH);
 
         $searchableFields = $this->entity['search']['fields'];
-        $paginator = $this->findBy($this->entity['class'], $this->request->query->get('query'), $searchableFields, $this->request->query->get('page', 1), $this->config['list']['max_results'], $this->request->query->get('sortField'), $this->request->query->get('sortDirection'));
+        $paginator        = $this->dataService->findBy(
+            $this->entity['class'],
+            $this->request->query->get('query'),
+            $searchableFields,
+            $this->request->query->get('page', 1),
+            $this->config['list']['max_results'],
+            $this->request->query->get('sortField'),
+            $this->request->query->get('sortDirection')
+        );
+        
         $fields = $this->entity['list']['fields'];
 
         $this->dispatch(EasyAdminEvents::POST_SEARCH, array(
@@ -398,8 +422,8 @@ class AdminController extends Controller
 
         $this->get('property_accessor')->setValue($entity, $property, $value);
 
-        $this->em->persist($entity);
-        $this->em->flush();
+        $this->dataService->persistAndFlush($entity);
+
         $this->dispatch(EasyAdminEvents::POST_UPDATE, array('entity' => $entity, 'newValue' => $value));
 
         $this->dispatch(EasyAdminEvents::POST_EDIT);
@@ -449,137 +473,6 @@ class AdminController extends Controller
     {
     }
 
-    /**
-     * Performs a database query to get all the records related to the given
-     * entity. It supports pagination and field sorting.
-     *
-     * @param string      $entityClass
-     * @param int         $page
-     * @param int         $maxPerPage
-     * @param string|null $sortField
-     * @param string|null $sortDirection
-     *
-     * @return Pagerfanta The paginated query results
-     */
-    protected function findAll($entityClass, $page = 1, $maxPerPage = 15, $sortField = null, $sortDirection = null)
-    {
-        if (empty($sortDirection) || !in_array(strtoupper($sortDirection), array('ASC', 'DESC'))) {
-            $sortDirection = 'DESC';
-        }
-
-        $queryBuilder = $this->executeDynamicMethod('create<EntityName>ListQueryBuilder', array($entityClass, $sortDirection, $sortField));
-
-        $this->dispatch(EasyAdminEvents::POST_LIST_QUERY_BUILDER, array(
-            'query_builder' => $queryBuilder,
-            'sort_field' => $sortField,
-            'sort_direction' => $sortDirection,
-        ));
-
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($queryBuilder, true, false));
-        $paginator->setMaxPerPage($maxPerPage);
-        $paginator->setCurrentPage($page);
-
-        return $paginator;
-    }
-
-    /**
-     * Creates Query Builder instance for all the records.
-     *
-     * @param string      $entityClass
-     * @param string      $sortDirection
-     * @param string|null $sortField
-     *
-     * @return QueryBuilder The Query Builder instance
-     */
-    protected function createListQueryBuilder($entityClass, $sortDirection, $sortField = null)
-    {
-        $queryBuilder = $this->em->createQueryBuilder()->select('entity')->from($entityClass, 'entity');
-
-        if (null !== $sortField) {
-            $queryBuilder->orderBy('entity.'.$sortField, $sortDirection);
-        }
-
-        return $queryBuilder;
-    }
-
-    /**
-     * Performs a database query based on the search query provided by the user.
-     * It supports pagination and field sorting.
-     *
-     * @param string      $entityClass
-     * @param string      $searchQuery
-     * @param array       $searchableFields
-     * @param int         $page
-     * @param int         $maxPerPage
-     * @param string|null $sortField
-     * @param string|null $sortDirection
-     *
-     * @return Pagerfanta The paginated query results
-     */
-    protected function findBy($entityClass, $searchQuery, array $searchableFields, $page = 1, $maxPerPage = 15, $sortField = null, $sortDirection = null)
-    {
-        $queryBuilder = $this->executeDynamicMethod('create<EntityName>SearchQueryBuilder', array($entityClass, $searchQuery, $searchableFields, $sortField, $sortDirection));
-
-        $this->dispatch(EasyAdminEvents::POST_SEARCH_QUERY_BUILDER, array(
-            'query_builder' => $queryBuilder,
-            'search_query' => $searchQuery,
-            'searchable_fields' => $searchableFields,
-        ));
-
-        $paginator = new Pagerfanta(new DoctrineORMAdapter($queryBuilder, true, false));
-        $paginator->setMaxPerPage($maxPerPage);
-        $paginator->setCurrentPage($page);
-
-        return $paginator;
-    }
-
-    /**
-     * Creates Query Builder instance for search query.
-     *
-     * @param string      $entityClass
-     * @param string      $searchQuery
-     * @param array       $searchableFields
-     * @param string|null $sortField
-     * @param string|null $sortDirection
-     *
-     * @return QueryBuilder The Query Builder instance
-     */
-    protected function createSearchQueryBuilder($entityClass, $searchQuery, array $searchableFields, $sortField = null, $sortDirection = null)
-    {
-        $databaseIsPostgreSql = $this->isPostgreSqlUsedByEntity($entityClass);
-        $queryBuilder = $this->em->createQueryBuilder()->select('entity')->from($entityClass, 'entity');
-
-        $queryConditions = $queryBuilder->expr()->orX();
-        $queryParameters = array();
-        foreach ($searchableFields as $name => $metadata) {
-            $isNumericField = in_array($metadata['dataType'], array('integer', 'number', 'smallint', 'bigint', 'decimal', 'float'));
-            $isTextField = in_array($metadata['dataType'], array('string', 'text', 'guid'));
-
-            if (is_numeric($searchQuery) && $isNumericField) {
-                $queryConditions->add(sprintf('entity.%s = :exact_query', $name));
-                $queryParameters['exact_query'] = 0 + $searchQuery; // adding '0' turns the string into a numeric value
-            } elseif ($isTextField) {
-                $queryConditions->add(sprintf('entity.%s LIKE :fuzzy_query', $name));
-                $queryParameters['fuzzy_query'] = '%'.$searchQuery.'%';
-            } else {
-                // PostgreSQL doesn't allow to compare string values with non-string columns (e.g. 'id')
-                if ($databaseIsPostgreSql) {
-                    continue;
-                }
-
-                $queryConditions->add(sprintf('entity.%s IN (:words)', $name));
-                $queryParameters['words'] = explode(' ', $searchQuery);
-            }
-        }
-
-        $queryBuilder->add('where', $queryConditions)->setParameters($queryParameters);
-
-        if (null !== $sortField) {
-            $queryBuilder->orderBy('entity.'.$sortField, $sortDirection ?: 'DESC');
-        }
-
-        return $queryBuilder;
-    }
 
     /**
      * Creates the form used to edit an entity.
@@ -728,22 +621,8 @@ class AdminController extends Controller
      */
     protected function renderForbiddenActionError($action)
     {
-        return $this->render('@EasyAdmin/error/forbidden_action.html.twig', array('action' => $action), new Response('', 403));
-    }
-
-    /**
-     * Returns true if the data of the given entity are stored in a database
-     * of Type PostgreSQL.
-     *
-     * @param string $entityClass
-     *
-     * @return bool
-     */
-    private function isPostgreSqlUsedByEntity($entityClass)
-    {
-        $em = $this->get('doctrine')->getManagerForClass($entityClass);
-
-        return $em->getConnection()->getDatabasePlatform() instanceof PostgreSqlPlatform;
+        return $this->render('@EasyAdmin/error/forbidden_action.html.twig', array('action' => $action),
+            new Response('', 403));
     }
 
     /**
@@ -755,8 +634,9 @@ class AdminController extends Controller
      *   executeDynamicMethod('create<EntityName>Entity') and the entity name is 'User'
      *   if 'createUserEntity()' exists, execute it; otherwise execute 'createEntity()'
      *
-     * @param string $methodNamePattern The pattern of the method name (dynamic parts are enclosed with <> angle brackets)
-     * @param array  $arguments         The arguments passed to the executed method
+     * @param string $methodNamePattern The pattern of the method name (dynamic parts are enclosed with <> angle
+     *     brackets)
+     * @param array  $arguments The arguments passed to the executed method
      *
      * @return mixed
      */
