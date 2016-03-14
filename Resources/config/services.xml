@@ -31,9 +31,23 @@
         </service>
 
         <service id="easyadmin.listener.request_post_initialize" class="JavierEguiluz\Bundle\EasyAdminBundle\EventListener\RequestPostInitializeListener">
-            <argument type="service" id="doctrine" />
+            <argument type="service" id="doctrine_data_proxy_service" on-invalid="ignore" />
             <argument type="service" id="request_stack" on-invalid="null" />
             <tag name="kernel.event_listener" event="easy_admin.post_initialize" method="initializeRequest" />
         </service>
+
+        <service id="doctrine_data_proxy_service" class="JavierEguiluz\Bundle\EasyAdminBundle\Service\DoctrineDataProxyService">
+            <argument type="service" id="dataservice_orm" />
+            <argument type="service" id="dataservice_mongo" />
+        </service>
+
+        <service id="dataservice_mongo" class="JavierEguiluz\Bundle\EasyAdminBundle\Service\DoctrineMongoService">
+            <argument type="service" id="doctrine_mongodb" />
+        </service>
+
+        <service id="dataservice_orm" class="JavierEguiluz\Bundle\EasyAdminBundle\Service\DoctrineORMService">
+            <argument type="service" id="doctrine" />
+        </service>
+
     </services>
 </container>

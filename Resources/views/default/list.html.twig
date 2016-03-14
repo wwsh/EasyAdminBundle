@@ -1,11 +1,11 @@
-{% set _entity_config = easyadmin_entity(app.request.query.get('entity')) %}
+{% set _entity_config = easyadmin_element(app.request.query.get('element')) %}
 {% set _trans_parameters = { '%entity_name%': _entity_config.name|trans, '%entity_label%': _entity_config.label|trans } %}
 
 {% extends _entity_config.templates.layout %}
 
 {% set _request_parameters = _request_parameters|default({})|merge({
     action: app.request.get('action'),
-    entity: _entity_config.name,
+    element: _entity_config.name,
     menuIndex: app.request.get('menuIndex'),
     submenuIndex: app.request.get('submenuIndex'),
     sortField: app.request.get('sortField', ''),
@@ -46,7 +46,7 @@
             <div class="form-action {{ _action.css_class|default('') }}">
                 <form method="get" action="{{ path('easyadmin') }}">
                     <input type="hidden" name="action" value="search">
-                    <input type="hidden" name="entity" value="{{ _request_parameters.entity }}">
+                    <input type="hidden" name="element" value="{{ _request_parameters.element }}">
                     <input type="hidden" name="sortField" value="{{ _request_parameters.sortField }}">
                     <input type="hidden" name="sortDirection" value="{{ _request_parameters.sortDirection }}">
                     <input type="hidden" name="menuIndex" value="{{ _request_parameters.menuIndex }}">
@@ -204,7 +204,7 @@
                 var columnIndex = $(this).closest('td').index() + 1;
                 var propertyName = $('table th.toggle:nth-child(' + columnIndex + ')').data('property-name');
 
-                var toggleUrl = "{{ path('easyadmin', { action: 'edit', entity: _entity_config.name, view: 'list' })|raw }}"
+                var toggleUrl = "{{ path('easyadmin', { action: 'edit', element: _entity_config.name, view: 'list' })|raw }}"
                               + "&id=" + $(this).closest('tr').data('id')
                               + "&property=" + propertyName
                               + "&newValue=" + newValue.toString();

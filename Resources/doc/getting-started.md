@@ -129,6 +129,30 @@ The only required option in this configuration format is called `class` and
 defines the fully qualified class name of the Doctrine entity managed by the
 backend.
 
+Mongo Support
+-------------
+
+This version of EasyAdminBundle supports MongoDB via Doctrine's ODM thanks to
+[Thomas Parys](http://github.com/wwsh). The support in EasyAdmin tends to be
+as seamless as possible.
+
+The YAML configuration looks analogical to the classic ORM. Here's an example:
+
+```yaml
+# app/config/config.yml
+easy_admin:
+    documents:
+        User:
+            class: AppBundle\Document\User
+        Priviledge:
+            class: AppBundle\Document\Priviledge
+```
+
+Documents need to be generated and mapped. Document references are supported
+(ONE and MANY). You can have both entities and documents running in one admin,
+however, cross-referencing these types is not allowed.
+
+
 What's Next?
 ------------
 

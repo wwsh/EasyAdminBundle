@@ -23,41 +23,41 @@ class TemplateConfigPass implements ConfigPassInterface
     private $templatesDir;
 
     private $defaultBackendTemplates = array(
-        'layout' => '@EasyAdmin/default/layout.html.twig',
-        'menu' => '@EasyAdmin/default/menu.html.twig',
-        'edit' => '@EasyAdmin/default/edit.html.twig',
-        'list' => '@EasyAdmin/default/list.html.twig',
-        'new' => '@EasyAdmin/default/new.html.twig',
-        'show' => '@EasyAdmin/default/show.html.twig',
-        'exception' => '@EasyAdmin/default/exception.html.twig',
-        'flash_messages' => '@EasyAdmin/default/flash_messages.html.twig',
-        'paginator' => '@EasyAdmin/default/paginator.html.twig',
-        'field_array' => '@EasyAdmin/default/field_array.html.twig',
-        'field_association' => '@EasyAdmin/default/field_association.html.twig',
-        'field_bigint' => '@EasyAdmin/default/field_bigint.html.twig',
-        'field_boolean' => '@EasyAdmin/default/field_boolean.html.twig',
-        'field_date' => '@EasyAdmin/default/field_date.html.twig',
-        'field_datetime' => '@EasyAdmin/default/field_datetime.html.twig',
-        'field_datetimetz' => '@EasyAdmin/default/field_datetimetz.html.twig',
-        'field_decimal' => '@EasyAdmin/default/field_decimal.html.twig',
-        'field_float' => '@EasyAdmin/default/field_float.html.twig',
-        'field_guid' => '@EasyAdmin/default/field_guid.html.twig',
-        'field_id' => '@EasyAdmin/default/field_id.html.twig',
-        'field_image' => '@EasyAdmin/default/field_image.html.twig',
-        'field_json_array' => '@EasyAdmin/default/field_json_array.html.twig',
-        'field_integer' => '@EasyAdmin/default/field_integer.html.twig',
-        'field_object' => '@EasyAdmin/default/field_object.html.twig',
-        'field_raw' => '@EasyAdmin/default/field_raw.html.twig',
+        'layout'             => '@EasyAdmin/default/layout.html.twig',
+        'menu'               => '@EasyAdmin/default/menu.html.twig',
+        'edit'               => '@EasyAdmin/default/edit.html.twig',
+        'list'               => '@EasyAdmin/default/list.html.twig',
+        'new'                => '@EasyAdmin/default/new.html.twig',
+        'show'               => '@EasyAdmin/default/show.html.twig',
+        'exception'          => '@EasyAdmin/default/exception.html.twig',
+        'flash_messages'     => '@EasyAdmin/default/flash_messages.html.twig',
+        'paginator'          => '@EasyAdmin/default/paginator.html.twig',
+        'field_array'        => '@EasyAdmin/default/field_array.html.twig',
+        'field_association'  => '@EasyAdmin/default/field_association.html.twig',
+        'field_bigint'       => '@EasyAdmin/default/field_bigint.html.twig',
+        'field_boolean'      => '@EasyAdmin/default/field_boolean.html.twig',
+        'field_date'         => '@EasyAdmin/default/field_date.html.twig',
+        'field_datetime'     => '@EasyAdmin/default/field_datetime.html.twig',
+        'field_datetimetz'   => '@EasyAdmin/default/field_datetimetz.html.twig',
+        'field_decimal'      => '@EasyAdmin/default/field_decimal.html.twig',
+        'field_float'        => '@EasyAdmin/default/field_float.html.twig',
+        'field_guid'         => '@EasyAdmin/default/field_guid.html.twig',
+        'field_id'           => '@EasyAdmin/default/field_id.html.twig',
+        'field_image'        => '@EasyAdmin/default/field_image.html.twig',
+        'field_json_array'   => '@EasyAdmin/default/field_json_array.html.twig',
+        'field_integer'      => '@EasyAdmin/default/field_integer.html.twig',
+        'field_object'       => '@EasyAdmin/default/field_object.html.twig',
+        'field_raw'          => '@EasyAdmin/default/field_raw.html.twig',
         'field_simple_array' => '@EasyAdmin/default/field_simple_array.html.twig',
-        'field_smallint' => '@EasyAdmin/default/field_smallint.html.twig',
-        'field_string' => '@EasyAdmin/default/field_string.html.twig',
-        'field_text' => '@EasyAdmin/default/field_text.html.twig',
-        'field_time' => '@EasyAdmin/default/field_time.html.twig',
-        'field_toggle' => '@EasyAdmin/default/field_toggle.html.twig',
-        'label_empty' => '@EasyAdmin/default/label_empty.html.twig',
+        'field_smallint'     => '@EasyAdmin/default/field_smallint.html.twig',
+        'field_string'       => '@EasyAdmin/default/field_string.html.twig',
+        'field_text'         => '@EasyAdmin/default/field_text.html.twig',
+        'field_time'         => '@EasyAdmin/default/field_time.html.twig',
+        'field_toggle'       => '@EasyAdmin/default/field_toggle.html.twig',
+        'label_empty'        => '@EasyAdmin/default/label_empty.html.twig',
         'label_inaccessible' => '@EasyAdmin/default/label_inaccessible.html.twig',
-        'label_null' => '@EasyAdmin/default/label_null.html.twig',
-        'label_undefined' => '@EasyAdmin/default/label_undefined.html.twig',
+        'label_null'         => '@EasyAdmin/default/label_null.html.twig',
+        'label_undefined'    => '@EasyAdmin/default/label_undefined.html.twig',
     );
 
     public function __construct($templatesDir)
@@ -85,67 +85,81 @@ class TemplateConfigPass implements ConfigPassInterface
      */
     private function processEntityTemplates(array $backendConfig)
     {
-        // first, resolve the general template overriding mechanism
-        foreach ($backendConfig['entities'] as $entityName => $entityConfig) {
-            foreach ($this->defaultBackendTemplates as $templateName => $defaultTemplatePath) {
-                // 1st level priority: easy_admin.entities.<entityName>.templates.<templateName> config option
-                if (isset($entityConfig['templates'][$templateName])) {
-                    $template = $entityConfig['templates'][$templateName];
-                // 2nd level priority: easy_admin.design.templates.<templateName> config option
-                } elseif (isset($backendConfig['design']['templates'][$templateName])) {
-                    $template = $backendConfig['design']['templates'][$templateName];
-                // 3rd level priority: app/Resources/views/easy_admin/<entityName>/<templateName>.html.twig
-                } elseif (file_exists($this->templatesDir.'/easy_admin/'.$entityName.'/'.$templateName.'.html.twig')) {
-                    $template = 'easy_admin/'.$entityName.'/'.$templateName.'.html.twig';
-                // 4th level priority: app/Resources/views/easy_admin/<templateName>.html.twig
-                } elseif (file_exists($this->templatesDir.'/easy_admin/'.$templateName.'.html.twig')) {
-                    $template = 'easy_admin/'.$templateName.'.html.twig';
-                // 5th level priority: @EasyAdmin/default/<templateName>.html.twig
-                } else {
-                    $template = $defaultTemplatePath;
-                }
-
-                $entityConfig['templates'][$templateName] = $template;
+        foreach (['entities', 'documents'] as $elementType) {
+            if (!isset($backendConfig[$elementType]) || empty($backendConfig[$elementType])) {
+                continue;
             }
 
-            $backendConfig['entities'][$entityName] = $entityConfig;
-        }
-
-        // second, walk through all entity fields to determine their specific template
-        foreach ($backendConfig['entities'] as $entityName => $entityConfig) {
-            foreach (array('list', 'show') as $view) {
-                foreach ($entityConfig[$view]['fields'] as $fieldName => $fieldMetadata) {
-                    // if the field defines its own template, resolve its location
-                    if (isset($fieldMetadata['template'])) {
-                        $templatePath = $fieldMetadata['template'];
-
-                        // template path should contain the .html.twig extension
-                        // however, for usability reasons, we silently fix this issue if needed
-                        if ('.html.twig' !== substr($templatePath, -10)) {
-                            $templatePath .= '.html.twig';
-                            @trigger_error(sprintf('Passing a template path without the ".html.twig" extension is deprecated since version 1.11.7 and will be removed in 2.0. Use "%s" as the value of the "template" option for the "%s" field in the "%s" view of the "%s" entity.', $templatePath, $fieldName, $view, $entityName), E_USER_DEPRECATED);
-                        }
-
-                        // before considering $templatePath a regular Symfony template
-                        // path, check if the given template exists in any of these directories:
-                        // * app/Resources/views/easy_admin/<entityName>/<templatePath>
-                        // * app/Resources/views/easy_admin/<templatePath>
-                        if (file_exists($this->templatesDir.'/easy_admin/'.$entityName.'/'.$templatePath)) {
-                            $templatePath = 'easy_admin/'.$entityName.'/'.$templatePath;
-                        } elseif (file_exists($this->templatesDir.'/easy_admin/'.$templatePath)) {
-                            $templatePath = 'easy_admin/'.$templatePath;
-                        }
+            // first, resolve the general template overriding mechanism
+            foreach ($backendConfig[$elementType] as $elementName => $elementConfig) {
+                foreach ($this->defaultBackendTemplates as $templateName => $defaultTemplatePath) {
+                    // 1st level priority: easy_admin.entities.<entityName>.templates.<templateName> config option
+                    if (isset($elementConfig['templates'][$templateName])) {
+                        $template = $elementConfig['templates'][$templateName];
+                        // 2nd level priority: easy_admin.design.templates.<templateName> config option
+                    } elseif (isset($backendConfig['design']['templates'][$templateName])) {
+                        $template = $backendConfig['design']['templates'][$templateName];
+                        // 3rd level priority: app/Resources/views/easy_admin/<entityName>/<templateName>.html.twig
+                    } elseif (file_exists($this->templatesDir . '/easy_admin/' . $elementName . '/' . $templateName . '.html.twig')) {
+                        $template = 'easy_admin/' . $elementName . '/' . $templateName . '.html.twig';
+                        // 4th level priority: app/Resources/views/easy_admin/<templateName>.html.twig
+                    } elseif (file_exists($this->templatesDir . '/easy_admin/' . $templateName . '.html.twig')) {
+                        $template = 'easy_admin/' . $templateName . '.html.twig';
+                        // 5th level priority: @EasyAdmin/default/<templateName>.html.twig
                     } else {
-                        // At this point, we don't know the exact data type associated with each field.
-                        // The template is initialized to null and it will be resolved at runtime in the Configurator class
-                        $templatePath = null;
+                        $template = $defaultTemplatePath;
                     }
 
-                    $entityConfig[$view]['fields'][$fieldName]['template'] = $templatePath;
+                    $elementConfig['templates'][$templateName] = $template;
                 }
+
+                $backendConfig[$elementType][$elementName] = $elementConfig;
             }
 
-            $backendConfig['entities'][$entityName] = $entityConfig;
+        }
+
+        // second, walk through all elements' fields to determine their specific template
+        foreach (['entities', 'documents'] as $elementType) {
+            if (!isset($backendConfig[$elementType]) || empty($backendConfig[$elementType])) {
+                continue;
+            }
+
+            foreach ($backendConfig[$elementType] as $elementName => $elementConfig) {
+                foreach (array('list', 'show') as $view) {
+                    foreach ($elementConfig[$view]['fields'] as $fieldName => $fieldMetadata) {
+                        // if the field defines its own template, resolve its location
+                        if (isset($fieldMetadata['template'])) {
+                            $templatePath = $fieldMetadata['template'];
+
+                            // template path should contain the .html.twig extension
+                            // however, for usability reasons, we silently fix this issue if needed
+                            if ('.html.twig' !== substr($templatePath, -10)) {
+                                $templatePath .= '.html.twig';
+                                @trigger_error(sprintf('Passing a template path without the ".html.twig" extension is deprecated since version 1.11.7 and will be removed in 2.0. Use "%s" as the value of the "template" option for the "%s" field in the "%s" view of the "%s" entity.',
+                                    $templatePath, $fieldName, $view, $elementName), E_USER_DEPRECATED);
+                            }
+
+                            // before considering $templatePath a regular Symfony template
+                            // path, check if the given template exists in any of these directories:
+                            // * app/Resources/views/easy_admin/<entityName>/<templatePath>
+                            // * app/Resources/views/easy_admin/<templatePath>
+                            if (file_exists($this->templatesDir . '/easy_admin/' . $elementName . '/' . $templatePath)) {
+                                $templatePath = 'easy_admin/' . $elementName . '/' . $templatePath;
+                            } elseif (file_exists($this->templatesDir . '/easy_admin/' . $templatePath)) {
+                                $templatePath = 'easy_admin/' . $templatePath;
+                            }
+                        } else {
+                            // At this point, we don't know the exact data type associated with each field.
+                            // The template is initialized to null and it will be resolved at runtime in the Configurator class
+                            $templatePath = null;
+                        }
+
+                        $elementConfig[$view]['fields'][$fieldName]['template'] = $templatePath;
+                    }
+                }
+
+                $backendConfig[$elementType][$elementName] = $elementConfig;
+            }
         }
 
         return $backendConfig;
@@ -168,10 +182,10 @@ class TemplateConfigPass implements ConfigPassInterface
             // 1st level priority: easy_admin.design.templates.<templateName> config option
             if (isset($backendConfig['design']['templates'][$templateName])) {
                 $template = $backendConfig['design']['templates'][$templateName];
-            // 2nd level priority: app/Resources/views/easy_admin/<templateName>.html.twig
-            } elseif (file_exists($this->templatesDir.'/easy_admin/'.$templateName.'.html.twig')) {
-                $template = 'easy_admin/'.$templateName.'.html.twig';
-            // 3rd level priority: @EasyAdmin/default/<templateName>.html.twig
+                // 2nd level priority: app/Resources/views/easy_admin/<templateName>.html.twig
+            } elseif (file_exists($this->templatesDir . '/easy_admin/' . $templateName . '.html.twig')) {
+                $template = 'easy_admin/' . $templateName . '.html.twig';
+                // 3rd level priority: @EasyAdmin/default/<templateName>.html.twig
             } else {
                 $template = $defaultTemplatePath;
             }
@@ -193,29 +207,35 @@ class TemplateConfigPass implements ConfigPassInterface
      */
     private function processFieldTemplates(array $backendConfig)
     {
-        foreach ($backendConfig['entities'] as $entityName => $entityConfig) {
-            foreach (array('list', 'show') as $view) {
-                foreach ($entityConfig[$view]['fields'] as $fieldName => $fieldMetadata) {
-                    if (null !== $fieldMetadata['template']) {
-                        continue;
-                    }
-
-                    // this prevents the template from displaying the 'id' primary key formatted as a number
-                    if ('id' === $fieldName) {
-                        $template = $entityConfig['templates']['field_id'];
-                    } elseif (array_key_exists('field_'.$fieldMetadata['dataType'], $entityConfig['templates'])) {
-                        $template = $entityConfig['templates']['field_'.$fieldMetadata['dataType']];
-                    } else {
-                        $template = $entityConfig['templates']['label_undefined'];
-                    }
-
-                    $entityConfig[$view]['fields'][$fieldName]['template'] = $template;
-                }
+        foreach (['entities', 'documents'] as $elementType) {
+            if (!isset($backendConfig[$elementType]) || empty($backendConfig[$elementType])) {
+                continue;
             }
 
-            $backendConfig['entities'][$entityName] = $entityConfig;
-        }
+            foreach ($backendConfig[$elementType] as $elementName => $elementConfig) {
+                foreach (array('list', 'show') as $view) {
+                    foreach ($elementConfig[$view]['fields'] as $fieldName => $fieldMetadata) {
+                        if (null !== $fieldMetadata['template']) {
+                            continue;
+                        }
 
+                        // this prevents the template from displaying the 'id' primary key formatted as a number
+                        if ('id' === $fieldName) {
+                            $template = $elementConfig['templates']['field_id'];
+                        } elseif (array_key_exists('field_' . $fieldMetadata['dataType'], $elementConfig['templates'])) {
+                            $template = $elementConfig['templates']['field_' . $fieldMetadata['dataType']];
+                        } else {
+                            $template = $elementConfig['templates']['label_undefined'];
+                        }
+
+                        $elementConfig[$view]['fields'][$fieldName]['template'] = $template;
+                    }
+                }
+
+                $backendConfig[$elementType][$elementName] = $elementConfig;
+            }
+        }
+        
         return $backendConfig;
     }
 }

@@ -50,7 +50,8 @@ class MenuConfigPass implements ConfigPassInterface
      *
      * @param array $menuConfig
      * @param array $backendConfig
-     * @param int   $parentItemIndex The index of the parent item for this menu item (allows to treat submenus differently)
+     * @param int   $parentItemIndex The index of the parent item for this menu item (allows to treat submenus
+     *     differently)
      *
      * @return array
      */
@@ -59,18 +60,25 @@ class MenuConfigPass implements ConfigPassInterface
         // if the backend doesn't define the menu configuration: create a default
         // menu configuration to display all its entities
         if (empty($menuConfig)) {
-            foreach ($backendConfig['entities'] as $entityName => $entityConfig) {
-                $menuConfig[] = array('entity' => $entityName, 'label' => $entityConfig['label']);
+            if (isset($backendConfig['entities'])) {
+                foreach ($backendConfig['entities'] as $entityName => $entityConfig) {
+                    $menuConfig[] = array('element' => $entityName, 'label' => $entityConfig['label']);
+                }
+            }
+            if (isset($backendConfig['documents'])) {
+                foreach ($backendConfig['documents'] as $documentName => $documentConfig) {
+                    $menuConfig[] = array('element' => $documentName, 'label' => $documentConfig['label']);
+                }
             }
         }
 
         // replaces the short config syntax:
         //   design.menu: ['Product', 'User']
         // by the expanded config syntax:
-        //   design.menu: [{ entity: 'Product' }, { entity: 'User' }]
+        //   design.menu: []{ entity: 'Product' }, { entity: 'User' }]
         foreach ($menuConfig as $i => $itemConfig) {
             if (is_string($itemConfig)) {
-                $itemConfig = array('entity' => $itemConfig);
+                $itemConfig = array('element' => $itemConfig);
             }
 
             $menuConfig[$i] = $itemConfig;
@@ -83,7 +91,7 @@ class MenuConfigPass implements ConfigPassInterface
             } elseif (empty($itemConfig['icon'])) {
                 $itemConfig['icon'] = null;
             } else {
-                $itemConfig['icon'] = 'fa-'.$itemConfig['icon'];
+                $itemConfig['icon'] = 'fa-' . $itemConfig['icon'];
             }
 
             // normalize submenu configuration (only for main menu items)
@@ -95,14 +103,14 @@ class MenuConfigPass implements ConfigPassInterface
             if (!array_key_exists('default', $itemConfig)) {
                 $itemConfig['default'] = false;
             } else {
-                $itemConfig['default'] = (bool) $itemConfig['default'];
+                $itemConfig['default'] = (bool)$itemConfig['default'];
             }
 
             // normalize 'target' option, which allows to open menu items in different windows or tabs
             if (!array_key_exists('target', $itemConfig)) {
                 $itemConfig['target'] = false;
             } else {
-                $itemConfig['target'] = (string) $itemConfig['target'];
+                $itemConfig['target'] = (string)$itemConfig['target'];
             }
 
             $menuConfig[$i] = $itemConfig;
@@ -115,42 +123,49 @@ class MenuConfigPass implements ConfigPassInterface
     {
         foreach ($menuConfig as $i => $itemConfig) {
             // these options are needed to find the active menu/submenu item in the template
-            $itemConfig['menu_index'] = ($parentItemIndex === -1) ? $i : $parentItemIndex;
+            $itemConfig['menu_index']    = ($parentItemIndex === -1) ? $i : $parentItemIndex;
             $itemConfig['submenu_index'] = ($parentItemIndex === -1) ? -1 : $i;
 
             // 1st level priority: if 'entity' is defined, link to the given entity
-            if (isset($itemConfig['entity'])) {
-                $itemConfig['type'] = 'entity';
-                $entityName = $itemConfig['entity'];
+            if (isset($itemConfig['element'])) {
+                $itemConfig['type'] = 'element';
+                $elementName        = $itemConfig['element'];
 
-                if (!array_key_exists($entityName, $backendConfig['entities'])) {
-                    throw new \RuntimeException(sprintf('The "%s" entity included in the "menu" option is not managed by EasyAdmin. The menu can only include any of these entities: %s.', $entityName, implode(', ', array_keys($backendConfig['entities']))));
+                if (!array_key_exists($elementName, $backendConfig['entities'])
+                    && !array_key_exists($elementName, $backendConfig['documents'])
+                ) {
+                    throw new \RuntimeException(sprintf('The "%s" element included in the "menu" option is not managed by EasyAdmin. The menu can only include any of these elements: %s.',
+                            $elementName,
+                            implode(', ', array_keys($backendConfig['entities'])) . ', ' .
+                            implode(', ', array_keys($backendConfig['documents']))
+                        )
+                    );
                 }
 
                 if (!isset($itemConfig['label'])) {
-                    $itemConfig['label'] = $backendConfig['entities'][$entityName]['label'];
+                    $itemConfig['label'] = isset($backendConfig['entities'][$elementName])
+                        ? $backendConfig['entities'][$elementName]['label']
+                        : $backendConfig['documents'][$elementName]['label'];
                 }
 
                 if (!isset($itemConfig['params'])) {
                     $itemConfig['params'] = array();
                 }
-            }
-
-            // 2nd level priority: if 'url' is defined, link to the given absolute/relative URL
+            } // 2nd level priority: if 'url' is defined, link to the given absolute/relative URL
             elseif (isset($itemConfig['url'])) {
                 $itemConfig['type'] = 'link';
 
                 if (!isset($itemConfig['label'])) {
-                    throw new \RuntimeException(sprintf('The configuration of the menu item with "url = %s" must define the "label" option.', $itemConfig['url']));
+                    throw new \RuntimeException(sprintf('The configuration of the menu item with "url = %s" must define the "label" option.',
+                        $itemConfig['url']));
                 }
-            }
-
-            // 3rd level priority: if 'route' is defined, link to the path generated with the given route
+            } // 3rd level priority: if 'route' is defined, link to the path generated with the given route
             elseif (isset($itemConfig['route'])) {
                 $itemConfig['type'] = 'route';
 
                 if (!isset($itemConfig['label'])) {
-                    throw new \RuntimeException(sprintf('The configuration of the menu item with "route = %s" must define the "label" option.', $itemConfig['route']));
+                    throw new \RuntimeException(sprintf('The configuration of the menu item with "route = %s" must define the "label" option.',
+                        $itemConfig['route']));
                 }
 
                 if (!isset($itemConfig['params'])) {
