@@ -1,7 +1,7 @@
-**❮ NOTE ❯** This bundle releases new versions on a regular basis. Make sure
-to update your dependencies frequently to get the latest version.
-[Check out the changelog](https://github.com/javiereguiluz/EasyAdminBundle/releases)
-to learn about the new features and read the [UPGRADE guide](https://github.com/javiereguiluz/EasyAdminBundle/blob/master/UPGRADE.md).
+**< NOTE >** This is a fork of the official EadyAdminBundle with changes to
+support Doctrine ODM. The author is trying to keep it in sync with the original
+repo, however, you should check the latest available version (without ODM).
+Visit [this place](https://github.com/javiereguiluz/EasyAdminBundle).
 
 -----
 
