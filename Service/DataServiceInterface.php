@@ -2,6 +2,8 @@
 
 namespace JavierEguiluz\Bundle\EasyAdminBundle\Service;
 
+use Doctrine\Common\Persistence\Mapping\ClassMetadata;
+
 /**
  * Interface DataServiceInterface.
  * 
@@ -11,6 +13,10 @@ namespace JavierEguiluz\Bundle\EasyAdminBundle\Service;
  */
 interface DataServiceInterface
 {
+    /**
+     * @param $elementClass
+     * @return ClassMetadata
+     */
     public function getMetadata($elementClass);
 
     public function findOne($elementClass, $elementId);

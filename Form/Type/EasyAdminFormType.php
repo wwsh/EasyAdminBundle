@@ -50,10 +50,10 @@ class EasyAdminFormType extends AbstractType
     {
         $entity = $options['entity'];
         $view = $options['view'];
-        $entityConfig = $this->configurator->getElementConfiguration($entity);
-        $elementProperties = $entityConfig[$view]['fields'];
+        $entityConfig = $this->configurator->getEntityConfiguration($entity);
+        $entityProperties = $entityConfig[$view]['fields'];
 
-        foreach ($elementProperties as $name => $metadata) {
+        foreach ($entityProperties as $name => $metadata) {
             $formFieldOptions = $metadata['type_options'];
 
             // Configure options using the list of registered type configurators:
@@ -80,7 +80,7 @@ class EasyAdminFormType extends AbstractType
                 'allow_extra_fields' => true,
                 'data_class' => function (Options $options) use ($configurator) {
                     $entity = $options['entity'];
-                    $entityConfig = $configurator->getElementConfiguration($entity);
+                    $entityConfig = $configurator->getEntityConfiguration($entity);
 
                     return $entityConfig['class'];
                 },

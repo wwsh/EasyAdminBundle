@@ -5,6 +5,7 @@ namespace JavierEguiluz\Bundle\EasyAdminBundle\Service;
 use Doctrine\Bundle\DoctrineBundle\Registry;
 use JavierEguiluz\Bundle\EasyAdminBundle\Event\EasyAdminEvents;
 use JavierEguiluz\Bundle\EasyAdminBundle\Factory\QueryBuilderFactory;
+use JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine\ClassMetadataWrapper;
 use Pagerfanta\Adapter\DoctrineORMAdapter;
 use Pagerfanta\Pagerfanta;
 
@@ -114,4 +115,17 @@ class DoctrineORMService extends AbstractDataService implements DataServiceInter
         return $paginator;
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function getMetadata($elementClass)
+    {
+        $metadata = parent::getMetadata($elementClass);
+        
+        if (null === $metadata) {
+            return null;
+        }
+        
+        return new ClassMetadataWrapper($metadata);
+    }
 }

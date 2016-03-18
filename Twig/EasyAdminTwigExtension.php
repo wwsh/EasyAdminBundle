@@ -38,7 +38,7 @@ class EasyAdminTwigExtension extends \Twig_Extension
         return array(
             new \Twig_SimpleFunction('easyadmin_render_field_for_*_view', array($this, 'renderEntityField'), array('is_safe' => array('html'), 'needs_environment' => true)),
             new \Twig_SimpleFunction('easyadmin_config', array($this, 'getBackendConfiguration')),
-            new \Twig_SimpleFunction('easyadmin_element', array($this, 'getElementConfiguration')),
+            new \Twig_SimpleFunction('easyadmin_entity', array($this, 'getEntityConfiguration')),
             new \Twig_SimpleFunction('easyadmin_action_is_enabled', array($this, 'isActionEnabled')),
             new \Twig_SimpleFunction('easyadmin_action_is_enabled_for_*_view', array($this, 'isActionEnabled')),
             new \Twig_SimpleFunction('easyadmin_get_action', array($this, 'getActionConfiguration')),
@@ -76,10 +76,10 @@ class EasyAdminTwigExtension extends \Twig_Extension
      *
      * @return array|null
      */
-    public function getElementConfiguration($entityName)
+    public function getEntityConfiguration($entityName)
     {
         return null !== $this->getBackendConfiguration('entities.'.$entityName)
-            ? $this->configurator->getElementConfiguration($entityName)
+            ? $this->configurator->getEntityConfiguration($entityName)
             : null;
     }
 
@@ -98,7 +98,7 @@ class EasyAdminTwigExtension extends \Twig_Extension
      */
     public function renderEntityField(\Twig_Environment $twig, $view, $entityName, $item, array $fieldMetadata)
     {
-        $entityConfiguration = $this->configurator->getElementConfiguration($entityName);
+        $entityConfiguration = $this->configurator->getEntityConfiguration($entityName);
         $fieldName = $fieldMetadata['property'];
 
         try {
