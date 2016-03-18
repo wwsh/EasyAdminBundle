@@ -414,25 +414,11 @@ class Configuration implements ConfigurationInterface
             ->children()
                 ->arrayNode('entities')
                     ->normalizeKeys(false)
-                    ->useAttributeAsKey('name', false)
                     ->defaultValue(array())
                     ->info('The list of entities to manage in the administration zone.')
                     ->prototype('variable')
                 ->end()
-            ->end();
-    }
-
-    private function addDocumentsSection(ArrayNodeDefinition $rootNode)
-    {
-        $rootNode
-            ->children()
-                ->arrayNode('documents')
-                    ->normalizeKeys(false)
-                    ->useAttributeAsKey('name', false)
-                    ->defaultValue(array())
-                    ->info('The list of documents to manage in the administration zone.')
-                    ->prototype('variable')
-                ->end()
-            ->end();
+            ->end()
+        ;
     }
 }
