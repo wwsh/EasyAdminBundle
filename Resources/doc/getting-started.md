@@ -136,19 +136,21 @@ This version of EasyAdminBundle supports MongoDB via Doctrine's ODM thanks to
 [Thomas Parys](http://github.com/wwsh). The support in EasyAdmin tends to be
 as seamless as possible.
 
-The YAML configuration looks analogical to the classic ORM. Here's an example:
+**CAUTION!** Current Doctrine's ODM driver (at the time of writing) is not supporting the ext-mongo without PHP 5.x, therefore you **can't** use PHP 7.x with this bundle fork.
+
+The YAML configuration  format is pretty identical to the classic ORM. Here's an example:
 
 ```yaml
 # app/config/config.yml
 easy_admin:
-    documents:
+    entities:
         User:
             class: AppBundle\Document\User
         Priviledge:
             class: AppBundle\Document\Priviledge
 ```
 
-Documents need to be generated and mapped. Document references are supported
+You can use the same configuration format as for ORM entities. Documents need to be generated and mapped. Document references are supported
 (ONE and MANY). You can have both entities and documents running in one admin,
 however, cross-referencing these types is not allowed.
 

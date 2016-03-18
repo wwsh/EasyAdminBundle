@@ -428,6 +428,7 @@ class Configuration implements ConfigurationInterface
             ->children()
                 ->arrayNode('documents')
                     ->normalizeKeys(false)
+                    ->useAttributeAsKey('name', false)
                     ->defaultValue(array())
                     ->info('The list of documents to manage in the administration zone.')
                     ->prototype('variable')
