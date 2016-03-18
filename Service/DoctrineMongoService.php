@@ -5,7 +5,7 @@ namespace JavierEguiluz\Bundle\EasyAdminBundle\Service;
 use Doctrine\Bundle\MongoDBBundle\ManagerRegistry;
 use JavierEguiluz\Bundle\EasyAdminBundle\Event\EasyAdminEvents;
 use JavierEguiluz\Bundle\EasyAdminBundle\Factory\QueryBuilderFactory;
-use JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine\ODMClassMetadataWrapper;
+use JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine\MongoClassMetadataWrapper;
 use Pagerfanta\Adapter\DoctrineODMMongoDBAdapter;
 use Pagerfanta\Pagerfanta;
 
@@ -120,6 +120,6 @@ class DoctrineMongoService extends AbstractDataService implements DataServiceInt
             return null;
         }
         
-        return new ODMClassMetadataWrapper($metadata);
+        return new MongoClassMetadataWrapper($metadata);
     }
 }

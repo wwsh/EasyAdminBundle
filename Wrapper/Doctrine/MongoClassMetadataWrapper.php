@@ -10,7 +10,7 @@ use Doctrine\ODM\MongoDB\Mapping\ClassMetadata;
  * @author Thomas Parys <thomas.parys@wwsh.io>
  */
 
-class ODMClassMetadataWrapper implements ClassMetadataWrapperInterface
+class MongoClassMetadataWrapper implements ClassMetadataWrapperInterface
 {
     /**
      * @var ClassMetadata
