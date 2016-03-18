@@ -5,6 +5,7 @@ namespace JavierEguiluz\Bundle\EasyAdminBundle\Service;
 use Doctrine\Bundle\MongoDBBundle\ManagerRegistry;
 use JavierEguiluz\Bundle\EasyAdminBundle\Event\EasyAdminEvents;
 use JavierEguiluz\Bundle\EasyAdminBundle\Factory\QueryBuilderFactory;
+use JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine\ODMClassMetadataWrapper;
 use Pagerfanta\Adapter\DoctrineODMMongoDBAdapter;
 use Pagerfanta\Pagerfanta;
 
@@ -108,5 +109,17 @@ class DoctrineMongoService extends AbstractDataService implements DataServiceInt
         return $paginator;
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function getMetadata($elementClass)
+    {
+        $metadata = parent::getMetadata($elementClass);
 
+        if (null === $metadata) {
+            return null;
+        }
+        
+        return new ODMClassMetadataWrapper($metadata);
+    }
 }

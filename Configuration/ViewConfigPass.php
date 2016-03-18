@@ -38,23 +38,17 @@ class ViewConfigPass implements ConfigPassInterface
      */
     private function processViewConfig(array $backendConfig)
     {
-        foreach (['entities', 'documents'] as $elementType) {
-            if (!isset($backendConfig[$elementType]) || empty($backendConfig[$elementType])) {
-                continue;
-            }
+        foreach ($backendConfig['entities'] as $entityName => $entityConfig) {
+            foreach (array('edit', 'list', 'new', 'search', 'show') as $view) {
+                if (0 === count($entityConfig[$view]['fields'])) {
+                    $fieldsConfig = $this->filterFieldList(
+                        $entityConfig['properties'],
+                        $this->getExcludedFieldNames($view, $entityConfig),
+                        $this->getExcludedFieldTypes($view),
+                        $this->getMaxNumberFields($view)
+                    );
 
-            foreach ($backendConfig[$elementType] as $elementName => $elementConfig) {
-                foreach (array('edit', 'list', 'new', 'search', 'show') as $view) {
-                    if (0 === count($elementConfig[$view]['fields'])) {
-                        $fieldsConfig = $this->filterFieldList(
-                            $elementConfig['properties'],
-                            $this->getExcludedFieldNames($view, $elementConfig),
-                            $this->getExcludedFieldTypes($view),
-                            $this->getMaxNumberFields($view)
-                        );
-
-                        $backendConfig[$elementType][$elementName][$view]['fields'] = $fieldsConfig;
-                    }
+                    $backendConfig['entities'][$entityName][$view]['fields'] = $fieldsConfig;
                 }
             }
         }
@@ -72,27 +66,20 @@ class ViewConfigPass implements ConfigPassInterface
      */
     private function processFieldConfig(array $backendConfig)
     {
-        foreach (['entities', 'documents'] as $elementType) {
-            if (!isset($backendConfig[$elementType]) || empty($backendConfig[$elementType])) {
-                continue;
-            }
-
-            foreach ($backendConfig[$elementType] as $elementName => $elementConfig) {
-                foreach (array('edit', 'list', 'new', 'search', 'show') as $view) {
-                    foreach ($elementConfig[$view]['fields'] as $fieldName => $fieldConfig) {
-                        // special case: if the field is called 'id' and doesn't define a custom
-                        // label, use 'ID' as label. This improves the readability of the label
-                        // of this important field, which is usually related to the primary key
-                        if ('id' === $fieldConfig['fieldName'] && !isset($fieldConfig['label'])) {
-                            $fieldConfig['label'] = 'ID';
-                        }
-
-                        $backendConfig[$elementType][$elementName][$view]['fields'][$fieldName] = $fieldConfig;
+        foreach ($backendConfig['entities'] as $entityName => $entityConfig) {
+            foreach (array('edit', 'list', 'new', 'search', 'show') as $view) {
+                foreach ($entityConfig[$view]['fields'] as $fieldName => $fieldConfig) {
+                    // special case: if the field is called 'id' and doesn't define a custom
+                    // label, use 'ID' as label. This improves the readability of the label
+                    // of this important field, which is usually related to the primary key
+                    if ('id' === $fieldConfig['fieldName'] && !isset($fieldConfig['label'])) {
+                        $fieldConfig['label'] = 'ID';
                     }
+
+                    $backendConfig['entities'][$entityName][$view]['fields'][$fieldName] = $fieldConfig;
                 }
             }
         }
-
 
         return $backendConfig;
     }
@@ -108,11 +95,11 @@ class ViewConfigPass implements ConfigPassInterface
     private function getExcludedFieldNames($view, array $entityConfig)
     {
         $excludedFieldNames = array(
-            'edit'   => array($entityConfig['primary_key_field_name']),
-            'list'   => array('password', 'salt', 'slug', 'updatedAt', 'uuid'),
-            'new'    => array($entityConfig['primary_key_field_name']),
+            'edit' => array($entityConfig['primary_key_field_name']),
+            'list' => array('password', 'salt', 'slug', 'updatedAt', 'uuid'),
+            'new' => array($entityConfig['primary_key_field_name']),
             'search' => array('password', 'salt'),
-            'show'   => array(),
+            'show' => array(),
         );
 
         return isset($excludedFieldNames[$view]) ? $excludedFieldNames[$view] : array();
@@ -128,21 +115,11 @@ class ViewConfigPass implements ConfigPassInterface
     private function getExcludedFieldTypes($view)
     {
         $excludedFieldTypes = array(
-            'edit'   => array('binary', 'blob', 'json_array', 'object'),
-            'list'   => array('array', 'binary', 'blob', 'guid', 'json_array', 'object', 'simple_array', 'text'),
-            'new'    => array('binary', 'blob', 'json_array', 'object'),
-            'search' => array(
-                'association',
-                'binary',
-                'boolean',
-                'blob',
-                'date',
-                'datetime',
-                'datetimetz',
-                'time',
-                'object'
-            ),
-            'show'   => array(),
+            'edit' => array('binary', 'blob', 'json_array', 'object'),
+            'list' => array('array', 'binary', 'blob', 'guid', 'json_array', 'object', 'simple_array', 'text'),
+            'new' => array('binary', 'blob', 'json_array', 'object'),
+            'search' => array('association', 'association_odm', 'binary', 'boolean', 'blob', 'date', 'datetime', 'datetimetz', 'time', 'object'),
+            'show' => array(),
         );
 
         return isset($excludedFieldTypes[$view]) ? $excludedFieldTypes[$view] : array();

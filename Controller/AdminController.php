@@ -41,7 +41,8 @@ use Symfony\Component\HttpFoundation\Response;
 class AdminController extends Controller
 {
     protected $config;
-    protected $entity = array();
+
+    protected $entity = [];
 
     /** @var Request */
     protected $request;
@@ -69,24 +70,22 @@ class AdminController extends Controller
 
         // this condition happens when accessing the backend homepage, which
         // then redirects to the 'list' action of the first configured entity
-        if (null === $elementName = $request->query->get('element')) {
+        if (null === $entityName = $request->query->get('entity')) {
             return;
         }
 
-        // @todo: Not really consequent: "element" from URL is checked against "entities"
-
-        if (!array_key_exists($elementName, $this->config['entities'])) {
-            throw new UndefinedEntityException(array('entity_name' => $elementName));
+        if (!array_key_exists($entityName, $this->config['entities'])) {
+            throw new UndefinedEntityException(['entity_name' => $entityName]);
         }
 
-        $this->element = $this->get('easyadmin.configurator')->getElementConfiguration($elementName);
+        $this->entity = $this->get('easyadmin.configurator')->getEntityConfiguration($entityName);
 
         if (!$request->query->has('sortField')) {
-            $request->query->set('sortField', $this->element['primary_key_field_name']);
+            $request->query->set('sortField', $this->entity['primary_key_field_name']);
         }
 
         if (!$request->query->has('sortDirection') || !in_array(strtoupper($request->query->get('sortDirection')),
-                array('ASC', 'DESC'))
+                                                                ['ASC', 'DESC'])
         ) {
             $request->query->set('sortDirection', 'DESC');
         }
@@ -122,10 +121,10 @@ class AdminController extends Controller
 
         $action = $request->query->get('action', 'list');
         if (!$this->isActionAllowed($action)) {
-            throw new ForbiddenActionException(array('action' => $action, 'entity' => $this->entity['name']));
+            throw new ForbiddenActionException(['action' => $action, 'entity' => $this->entity['name']]);
         }
 
-        return $this->executeDynamicMethod($action.'<EntityName>Action');
+        return $this->executeDynamicMethod($action . '<EntityName>Action');
     }
 
     /**
@@ -141,28 +140,27 @@ class AdminController extends Controller
     {
         $config = $this->container->getParameter('easyadmin.config');
 
-        $cssContent = $this->renderView('@EasyAdmin/css/easyadmin.css.twig', array(
-            'brand_color' => $config['design']['brand_color'],
+        $cssContent = $this->renderView('@EasyAdmin/css/easyadmin.css.twig', [
+            'brand_color'  => $config['design']['brand_color'],
             'color_scheme' => $config['design']['color_scheme'],
-        ));
+        ]);
 
-        return Response::create($cssContent, 200, array('Content-Type' => 'text/css'))
-            ->setPublic()
-            ->setSharedMaxAge(600)
-            ;
+        return Response::create($cssContent, 200, ['Content-Type' => 'text/css'])
+                       ->setPublic()
+                       ->setSharedMaxAge(600);
     }
-    
-    protected function dispatch($eventName, array $arguments = array())
+
+    public function dispatch($eventName, array $arguments = [])
     {
-        $arguments = array_replace(array(
-            'config'      => $this->config,
-            'dataService' => $this->dataService,
-            'entity'      => $this->entity,
-            'request'     => $this->request,
-        ), $arguments);
+        $arguments = array_replace([
+                                       'config'      => $this->config,
+                                       'dataService' => $this->dataService,
+                                       'entity'      => $this->entity,
+                                       'request'     => $this->request,
+                                   ], $arguments);
 
         $subject = isset($arguments['paginator']) ? $arguments['paginator'] : $arguments['entity'];
-        $event = new GenericEvent($subject, $arguments);
+        $event   = new GenericEvent($subject, $arguments);
 
         $this->get('event_dispatcher')->dispatch($eventName, $event);
     }
@@ -177,17 +175,18 @@ class AdminController extends Controller
         $this->dispatch(EasyAdminEvents::PRE_LIST);
 
         $fields    = $this->entity['list']['fields'];
-        $paginator = $this->dataService->findAll($this->element['class'], $this->request->query->get('page', 1),
-            $this->config['list']['max_results'], $this->request->query->get('sortField'),
-            $this->request->query->get('sortDirection'));
+        $paginator = $this->dataService->findAll($this->entity['class'], $this->request->query->get('page', 1),
+                                                 $this->config['list']['max_results'],
+                                                 $this->request->query->get('sortField'),
+                                                 $this->request->query->get('sortDirection'));
 
-        $this->dispatch(EasyAdminEvents::POST_LIST, array('paginator' => $paginator));
+        $this->dispatch(EasyAdminEvents::POST_LIST, ['paginator' => $paginator]);
 
-        return $this->render($this->entity['templates']['list'], array(
-            'paginator' => $paginator,
-            'fields' => $fields,
+        return $this->render($this->entity['templates']['list'], [
+            'paginator'            => $paginator,
+            'fields'               => $fields,
             'delete_form_template' => $this->createDeleteForm($this->entity['name'], '__id__')->createView(),
-        ));
+        ]);
     }
 
     /**
@@ -199,53 +198,54 @@ class AdminController extends Controller
     {
         $this->dispatch(EasyAdminEvents::PRE_EDIT);
 
-        $id = $this->request->query->get('id');
+        $id        = $this->request->query->get('id');
         $easyadmin = $this->request->attributes->get('easyadmin');
-        $entity = $easyadmin['item'];
+        $entity    = $easyadmin['item'];
 
         if ($this->request->isXmlHttpRequest() && $property = $this->request->query->get('property')) {
-            $newValue = 'true' === strtolower($this->request->query->get('newValue'));
+            $newValue       = 'true' === strtolower($this->request->query->get('newValue'));
             $fieldsMetadata = $this->entity['list']['fields'];
 
-            if (!isset($fieldsMetadata[$property]) || 'toggle' !== $fieldsMetadata[$property]['dataType']) {
-                throw new \RuntimeException(sprintf('The type of the "%s" property is not "toggle".', $property));
+            if (!isset($fieldsMetadata[$property]) || 'toggle' != $fieldsMetadata[$property]['dataType']) {
+                throw new \Exception(sprintf('The type of the "%s" property is not "toggle".', $property));
             }
 
             $this->updateEntityProperty($entity, $property, $newValue);
 
-            return new Response((string) $newValue);
+            return new Response((string)$newValue);
         }
 
         $fields = $this->entity['edit']['fields'];
 
-        $editForm = $this->executeDynamicMethod('create<EntityName>EditForm', array($entity, $fields));
+        $editForm   = $this->executeDynamicMethod('create<EntityName>EditForm', [$entity, $fields]);
         $deleteForm = $this->createDeleteForm($this->entity['name'], $id);
 
         $editForm->handleRequest($this->request);
         if ($editForm->isValid()) {
-            $this->dispatch(EasyAdminEvents::PRE_UPDATE, array('entity' => $entity));
+            $this->dispatch(EasyAdminEvents::PRE_UPDATE, ['entity' => $entity]);
 
-            $this->executeDynamicMethod('preUpdate<EntityName>Entity', array($entity));
+            $this->executeDynamicMethod('preUpdate<EntityName>Entity', [$entity]);
 
             $this->dataService->flush($entity);
 
-            $this->dispatch(EasyAdminEvents::POST_UPDATE, array('entity' => $entity));
+            $this->dispatch(EasyAdminEvents::POST_UPDATE, ['entity' => $entity]);
 
             $refererUrl = $this->request->query->get('referer', '');
 
             return !empty($refererUrl)
                 ? $this->redirect(urldecode($refererUrl))
-                : $this->redirect($this->generateUrl('easyadmin', array('action' => 'list', 'entity' => $this->entity['name'])));
+                : $this->redirect($this->generateUrl('easyadmin',
+                                                     ['action' => 'list', 'entity' => $this->entity['name']]));
         }
 
         $this->dispatch(EasyAdminEvents::POST_EDIT);
 
-        return $this->render($this->entity['templates']['edit'], array(
-            'form' => $editForm->createView(),
+        return $this->render($this->entity['templates']['edit'], [
+            'form'          => $editForm->createView(),
             'entity_fields' => $fields,
-            'entity' => $entity,
-            'delete_form' => $deleteForm->createView(),
-        ));
+            'entity'        => $entity,
+            'delete_form'   => $deleteForm->createView(),
+        ]);
     }
 
     /**
@@ -257,24 +257,24 @@ class AdminController extends Controller
     {
         $this->dispatch(EasyAdminEvents::PRE_SHOW);
 
-        $id = $this->request->query->get('id');
+        $id        = $this->request->query->get('id');
         $easyadmin = $this->request->attributes->get('easyadmin');
-        $entity = $easyadmin['item'];
+        $entity    = $easyadmin['item'];
 
-        $fields = $this->entity['show']['fields'];
+        $fields     = $this->entity['show']['fields'];
         $deleteForm = $this->createDeleteForm($this->entity['name'], $id);
 
-        $this->dispatch(EasyAdminEvents::POST_SHOW, array(
+        $this->dispatch(EasyAdminEvents::POST_SHOW, [
             'deleteForm' => $deleteForm,
-            'fields' => $fields,
-            'entity' => $entity,
-        ));
+            'fields'     => $fields,
+            'entity'     => $entity,
+        ]);
 
-        return $this->render($this->entity['templates']['show'], array(
-            'entity' => $entity,
-            'fields' => $fields,
+        return $this->render($this->entity['templates']['show'], [
+            'entity'      => $entity,
+            'fields'      => $fields,
             'delete_form' => $deleteForm->createView(),
-        ));
+        ]);
     }
 
     /**
@@ -288,42 +288,43 @@ class AdminController extends Controller
 
         $entity = $this->executeDynamicMethod('createNew<EntityName>Entity');
 
-        $easyadmin = $this->request->attributes->get('easyadmin');
+        $easyadmin         = $this->request->attributes->get('easyadmin');
         $easyadmin['item'] = $entity;
         $this->request->attributes->set('easyadmin', $easyadmin);
 
         $fields = $this->entity['new']['fields'];
 
-        $newForm = $this->executeDynamicMethod('create<EntityName>NewForm', array($entity, $fields));
+        $newForm = $this->executeDynamicMethod('create<EntityName>NewForm', [$entity, $fields]);
 
         $newForm->handleRequest($this->request);
         if ($newForm->isValid()) {
-            $this->dispatch(EasyAdminEvents::PRE_PERSIST, array('entity' => $entity));
+            $this->dispatch(EasyAdminEvents::PRE_PERSIST, ['entity' => $entity]);
 
-            $this->executeDynamicMethod('prePersist<EntityName>Entity', array($entity));
+            $this->executeDynamicMethod('prePersist<EntityName>Entity', [$entity]);
 
             $this->dataService->persistAndFlush($entity);
 
-            $this->dispatch(EasyAdminEvents::POST_PERSIST, array('entity' => $entity));
+            $this->dispatch(EasyAdminEvents::POST_PERSIST, ['entity' => $entity]);
 
             $refererUrl = $this->request->query->get('referer', '');
 
             return !empty($refererUrl)
                 ? $this->redirect(urldecode($refererUrl))
-                : $this->redirect($this->generateUrl('easyadmin', array('action' => 'list', 'entity' => $this->entity['name'])));
+                : $this->redirect($this->generateUrl('easyadmin',
+                                                     ['action' => 'list', 'entity' => $this->entity['name']]));
         }
 
-        $this->dispatch(EasyAdminEvents::POST_NEW, array(
+        $this->dispatch(EasyAdminEvents::POST_NEW, [
             'entity_fields' => $fields,
-            'form' => $newForm,
-            'entity' => $entity,
-        ));
+            'form'          => $newForm,
+            'entity'        => $entity,
+        ]);
 
-        return $this->render($this->entity['templates']['new'], array(
-            'form' => $newForm->createView(),
+        return $this->render($this->entity['templates']['new'], [
+            'form'          => $newForm->createView(),
             'entity_fields' => $fields,
-            'entity' => $entity,
-        ));
+            'entity'        => $entity,
+        ]);
     }
 
     /**
@@ -337,26 +338,27 @@ class AdminController extends Controller
         $this->dispatch(EasyAdminEvents::PRE_DELETE);
 
         if ('DELETE' !== $this->request->getMethod()) {
-            return $this->redirect($this->generateUrl('easyadmin', array('action' => 'list', 'entity' => $this->entity['name'])));
+            return $this->redirect($this->generateUrl('easyadmin',
+                                                      ['action' => 'list', 'entity' => $this->entity['name']]));
         }
 
-        $id = $this->request->query->get('id');
+        $id   = $this->request->query->get('id');
         $form = $this->createDeleteForm($this->entity['name'], $id);
         $form->handleRequest($this->request);
 
         if ($form->isValid()) {
             $easyadmin = $this->request->attributes->get('easyadmin');
-            $entity = $easyadmin['item'];
+            $entity    = $easyadmin['item'];
 
-            $this->dispatch(EasyAdminEvents::PRE_REMOVE, array('entity' => $entity));
+            $this->dispatch(EasyAdminEvents::PRE_REMOVE, ['entity' => $entity]);
 
-            $this->executeDynamicMethod('preRemove<EntityName>Entity', array($entity));
+            $this->executeDynamicMethod('preRemove<EntityName>Entity', [$entity]);
 
 
             $this->dataService->remove($entity)
                               ->flush($entity);
 
-            $this->dispatch(EasyAdminEvents::POST_REMOVE, array('entity' => $entity));
+            $this->dispatch(EasyAdminEvents::POST_REMOVE, ['entity' => $entity]);
         }
 
         $refererUrl = $this->request->query->get('referer', '');
@@ -365,7 +367,8 @@ class AdminController extends Controller
 
         return !empty($refererUrl)
             ? $this->redirect(urldecode($refererUrl))
-            : $this->redirect($this->generateUrl('easyadmin', array('action' => 'list', 'entity' => $this->entity['name'])));
+            : $this->redirect($this->generateUrl('easyadmin',
+                                                 ['action' => 'list', 'entity' => $this->entity['name']]));
     }
 
     /**
@@ -387,44 +390,47 @@ class AdminController extends Controller
             $this->request->query->get('sortField'),
             $this->request->query->get('sortDirection')
         );
-        
+
         $fields = $this->entity['list']['fields'];
 
-        $this->dispatch(EasyAdminEvents::POST_SEARCH, array(
-            'fields' => $fields,
+        $this->dispatch(EasyAdminEvents::POST_SEARCH, [
+            'fields'    => $fields,
             'paginator' => $paginator,
-        ));
+        ]);
 
-        return $this->render($this->entity['templates']['list'], array(
-            'paginator' => $paginator,
-            'fields' => $fields,
+        return $this->render($this->entity['templates']['list'], [
+            'paginator'            => $paginator,
+            'fields'               => $fields,
             'delete_form_template' => $this->createDeleteForm($this->entity['name'], '__id__')->createView(),
-        ));
+        ]);
     }
 
     /**
      * It updates the value of some property of some entity to the new given value.
      *
-     * @param mixed  $entity   The instance of the entity to modify
+     * @param mixed  $entity The instance of the entity to modify
      * @param string $property The name of the property to change
-     * @param bool   $value    The new value of the property
+     * @param bool   $value The new value of the property
      */
     private function updateEntityProperty($entity, $property, $value)
     {
         $entityConfig = $this->entity;
 
         // the method_exists() check is needed because Symfony 2.3 doesn't have isWritable() method
-        if (method_exists($this->get('property_accessor'), 'isWritable') && !$this->get('property_accessor')->isWritable($entity, $property)) {
-            throw new \Exception(sprintf('The "%s" property of the "%s" entity is not writable.', $property, $entityConfig['name']));
+        if (method_exists($this->get('property_accessor'),
+                          'isWritable') && !$this->get('property_accessor')->isWritable($entity, $property)
+        ) {
+            throw new \Exception(sprintf('The "%s" property of the "%s" entity is not writable.', $property,
+                                         $entityConfig['name']));
         }
 
-        $this->dispatch(EasyAdminEvents::PRE_UPDATE, array('entity' => $entity, 'newValue' => $value));
+        $this->dispatch(EasyAdminEvents::PRE_UPDATE, ['entity' => $entity, 'newValue' => $value]);
 
         $this->get('property_accessor')->setValue($entity, $property, $value);
 
         $this->dataService->persistAndFlush($entity);
 
-        $this->dispatch(EasyAdminEvents::POST_UPDATE, array('entity' => $entity, 'newValue' => $value));
+        $this->dispatch(EasyAdminEvents::POST_UPDATE, ['entity' => $entity, 'newValue' => $value]);
 
         $this->dispatch(EasyAdminEvents::POST_EDIT);
     }
@@ -504,17 +510,19 @@ class AdminController extends Controller
      * Creates the form builder of the form used to create or edit the given entity.
      *
      * @param object $entity
-     * @param string $view   The name of the view where this form is used ('new' or 'edit')
+     * @param string $view The name of the view where this form is used ('new' or 'edit')
      *
      * @return FormBuilder
      */
     protected function createEntityFormBuilder($entity, $view)
     {
-        $formOptions = $this->executeDynamicMethod('get<EntityName>EntityFormOptions', array($entity, $view));
+        $formOptions = $this->executeDynamicMethod('get<EntityName>EntityFormOptions', [$entity, $view]);
 
-        $formType = $this->useLegacyFormComponent() ? 'easyadmin' : 'JavierEguiluz\\Bundle\\EasyAdminBundle\\Form\\Type\\EasyAdminFormType';
+        $formType = $this->useLegacyFormComponent() ? 'easyadmin' :
+            'JavierEguiluz\\Bundle\\EasyAdminBundle\\Form\\Type\\EasyAdminFormType';
 
-        return $this->get('form.factory')->createNamedBuilder(strtolower($this->entity['name']), $formType, $entity, $formOptions);
+        return $this->get('form.factory')->createNamedBuilder(strtolower($this->entity['name']), $formType, $entity,
+                                                              $formOptions);
     }
 
     /**
@@ -528,9 +536,9 @@ class AdminController extends Controller
      */
     protected function getEntityFormOptions($entity, $view)
     {
-        $formOptions = $this->entity[$view]['form_options'];
+        $formOptions           = $this->entity[$view]['form_options'];
         $formOptions['entity'] = $this->entity['name'];
-        $formOptions['view'] = $view;
+        $formOptions['view']   = $view;
 
         return $formOptions;
     }
@@ -548,25 +556,26 @@ class AdminController extends Controller
      */
     protected function createEntityForm($entity, array $entityProperties, $view)
     {
-        if (method_exists($this, $customMethodName = 'create'.$this->entity['name'].'EntityForm')) {
+        if (method_exists($this, $customMethodName = 'create' . $this->entity['name'] . 'EntityForm')) {
             $form = $this->{$customMethodName}($entity, $entityProperties, $view);
             if (!$form instanceof FormInterface) {
                 throw new \Exception(sprintf(
-                    'The "%s" method must return a FormInterface, "%s" given.',
-                    $customMethodName, is_object($form) ? get_class($form) : gettype($form)
-                ));
+                                         'The "%s" method must return a FormInterface, "%s" given.',
+                                         $customMethodName, is_object($form) ? get_class($form) : gettype($form)
+                                     ));
             }
 
             return $form;
         }
 
-        $formBuilder = $this->executeDynamicMethod('create<EntityName>EntityFormBuilder', array($entity, $view));
+        $formBuilder = $this->executeDynamicMethod('create<EntityName>EntityFormBuilder', [$entity, $view]);
 
         if (!$formBuilder instanceof FormBuilderInterface) {
             throw new \Exception(sprintf(
-                'The "%s" method must return a FormBuilderInterface, "%s" given.',
-                'createEntityForm', is_object($formBuilder) ? get_class($formBuilder) : gettype($formBuilder)
-            ));
+                                     'The "%s" method must return a FormBuilderInterface, "%s" given.',
+                                     'createEntityForm',
+                                     is_object($formBuilder) ? get_class($formBuilder) : gettype($formBuilder)
+                                 ));
         }
 
         return $formBuilder->getForm();
@@ -586,12 +595,17 @@ class AdminController extends Controller
     {
         /** @var FormBuilder $formBuilder */
         $formBuilder = $this->get('form.factory')->createNamedBuilder('delete_form')
-            ->setAction($this->generateUrl('easyadmin', array('action' => 'delete', 'entity' => $entityName, 'id' => $entityId)))
-            ->setMethod('DELETE')
-        ;
+                            ->setAction($this->generateUrl('easyadmin',
+                                                           [
+                                                               'action' => 'delete',
+                                                               'entity' => $entityName,
+                                                               'id'     => $entityId
+                                                           ]))
+                            ->setMethod('DELETE');
 
-        $submitButtonType = $this->useLegacyFormComponent() ? 'submit' : 'Symfony\\Component\\Form\\Extension\\Core\\Type\\SubmitType';
-        $formBuilder->add('submit', $submitButtonType, array('label' => 'Delete'));
+        $submitButtonType = $this->useLegacyFormComponent() ? 'submit' :
+            'Symfony\\Component\\Form\\Extension\\Core\\Type\\SubmitType';
+        $formBuilder->add('submit', $submitButtonType, ['label' => 'Delete']);
 
         return $formBuilder->getForm();
     }
@@ -621,8 +635,8 @@ class AdminController extends Controller
      */
     protected function renderForbiddenActionError($action)
     {
-        return $this->render('@EasyAdmin/error/forbidden_action.html.twig', array('action' => $action),
-            new Response('', 403));
+        return $this->render('@EasyAdmin/error/forbidden_action.html.twig', ['action' => $action],
+                             new Response('', 403));
     }
 
     /**
@@ -640,14 +654,14 @@ class AdminController extends Controller
      *
      * @return mixed
      */
-    private function executeDynamicMethod($methodNamePattern, array $arguments = array())
+    private function executeDynamicMethod($methodNamePattern, array $arguments = [])
     {
         $methodName = str_replace('<EntityName>', $this->entity['name'], $methodNamePattern);
-        if (!is_callable(array($this, $methodName))) {
+        if (!is_callable([$this, $methodName])) {
             $methodName = str_replace('<EntityName>', '', $methodNamePattern);
         }
 
-        return call_user_func_array(array($this, $methodName), $arguments);
+        return call_user_func_array([$this, $methodName], $arguments);
     }
 
     /**

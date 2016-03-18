@@ -3,6 +3,7 @@
 namespace JavierEguiluz\Bundle\EasyAdminBundle\Service;
 
 use Doctrine\Common\Persistence\ManagerRegistry;
+use JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine\ClassMetadataWrapperInterface;
 
 
 /**
@@ -56,7 +57,7 @@ class DoctrineDataProxyService
      * Get metadata for entity or document.
      *
      * @param $elementClass
-     * @return \Doctrine\Common\Persistence\Mapping\ClassMetadata
+     * @return ClassMetadataWrapperInterface
      */
     public function getMetadata($elementClass)
     {

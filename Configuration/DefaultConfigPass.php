@@ -20,34 +20,10 @@ class DefaultConfigPass implements ConfigPassInterface
 {
     public function process(array $backendConfig)
     {
-        $backendConfig = $this->processMergeDocumentsIntoEntities($backendConfig);
         $backendConfig = $this->processDefaultEntity($backendConfig);
         $backendConfig = $this->processDefaultMenuItem($backendConfig);
         $backendConfig = $this->processDefaultHomepage($backendConfig);
 
-        return $backendConfig;
-    }
-
-    /**
-     * For an easy and unified processing, documents should not differ
-     * from their entities counterparts.
-     * From now on merged as one.
-     *
-     * @param $backendConfig
-     * @return mixed
-     */
-    private function processMergeDocumentsIntoEntities($backendConfig)
-    {
-        if (!isset($backendConfig['documents'])) {
-            return $backendConfig;
-        }
-
-        $backendConfig['entities'] =
-            $backendConfig['entities'] +
-            $backendConfig['documents'];
-
-        unset($backendConfig['documents']);
-        
         return $backendConfig;
     }
 
@@ -114,13 +90,13 @@ class DefaultConfigPass implements ConfigPassInterface
         // action of the first configured entity as the backend homepage
         if (null === $menuItemConfig = $backendConfig['default_menu_item']) {
             $backendHomepage['route'] = 'easyadmin';
-            $backendHomepage['params'] = array('action' => 'list', 'element' => $backendConfig['default_entity_name']);
+            $backendHomepage['params'] = array('action' => 'list', 'entity' => $backendConfig['default_entity_name']);
         } else {
             $routeParams = array('menuIndex' => $menuItemConfig['menu_index'], 'submenuIndex' => $menuItemConfig['submenu_index']);
 
             if ('entity' === $menuItemConfig['type']) {
                 $backendHomepage['route'] = 'easyadmin';
-                $backendHomepage['params'] = array_merge(array('action' => 'list', 'element' => $menuItemConfig['entity']), $routeParams, $menuItemConfig['params']);
+                $backendHomepage['params'] = array_merge(array('action' => 'list', 'entity' => $menuItemConfig['entity']), $routeParams, $menuItemConfig['params']);
             } elseif ('route' === $menuItemConfig['type']) {
                 $backendHomepage['route'] = $menuItemConfig['route'];
                 $backendHomepage['params'] = array_merge($routeParams, $menuItemConfig['params']);

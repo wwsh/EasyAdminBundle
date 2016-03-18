@@ -59,7 +59,7 @@ class Configurator
      *
      * @throws \InvalidArgumentException when the entity isn't managed by EasyAdmin
      */
-    public function getElementConfiguration($entityName)
+    public function getEntityConfiguration($entityName)
     {
         return $this->getEntityConfig($entityName);
     }

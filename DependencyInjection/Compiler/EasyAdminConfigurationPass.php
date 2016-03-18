@@ -16,6 +16,7 @@ use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\DefaultConfigPass;
 use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\MenuConfigPass;
 use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\MetadataConfigPass;
 use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\NormalizerConfigPass;
+use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\OdmConfigPass;
 use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\PropertyConfigPass;
 use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\TemplateConfigPass;
 use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\ViewConfigPass;
@@ -35,6 +36,7 @@ class EasyAdminConfigurationPass implements CompilerPassInterface
         $backendConfig = $this->getBackendConfig($container);
 
         $configPasses = array(
+            new OdmConfigPass(),
             new NormalizerConfigPass(),
             new MenuConfigPass(),
             new ActionConfigPass(),

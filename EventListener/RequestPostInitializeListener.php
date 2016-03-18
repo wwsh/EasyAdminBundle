@@ -2,7 +2,7 @@
 
 namespace JavierEguiluz\Bundle\EasyAdminBundle\EventListener;
 
-use JavierEguiluz\Bundle\EasyAdminBundle\Exception\ElementNotFoundException;
+use JavierEguiluz\Bundle\EasyAdminBundle\Exception\EntityNotFoundException;
 use JavierEguiluz\Bundle\EasyAdminBundle\Service\DoctrineDataProxyService;
 use Symfony\Component\EventDispatcher\GenericEvent;
 use Symfony\Component\HttpFoundation\Request;
@@ -65,29 +65,29 @@ class RequestPostInitializeListener
             return;
         }
 
-        $this->request->attributes->set('easyadmin', array(
-            'element' => $element = $event->getArgument('element'),
-            'view'    => $this->request->query->get('action', 'list'),
-            'item'    => ($id = $this->request->query->get('id')) ? $this->findCurrentItem($element, $id) : null,
-        ));
+        $this->request->attributes->set('easyadmin', [
+            'entity' => $element = $event->getArgument('entity'),
+            'view'   => $this->request->query->get('action', 'list'),
+            'item'   => ($id = $this->request->query->get('id')) ? $this->findCurrentItem($element, $id) : null,
+        ]);
     }
 
     /**
      * Looks for the object that corresponds to the selected 'id' of the current entity/document.
      *
-     * @param array $elementConfig
-     * @param mixed $elementId
+     * @param array $entityConfig
+     * @param mixed $entityId
      *
      * @return object The entity
      *
-     * @throws ElementNotFoundException
+     * @throws EntityNotFoundException
      */
-    private function findCurrentItem(array $elementConfig, $elementId)
+    private function findCurrentItem(array $entityConfig, $entityId)
     {
-        if (null === $element = $this->dataService->findOne($elementConfig['class'], $elementId)) {
-            throw new ElementNotFoundException(array('element' => $elementConfig, 'element_id' => $elementId));
+        if (null === $entity = $this->dataService->findOne($entityConfig['class'], $entityId)) {
+            throw new EntityNotFoundException(['entity' => $entityConfig, 'entity_id' => $entityId]);
         }
 
-        return $element;
+        return $entity;
     }
 }

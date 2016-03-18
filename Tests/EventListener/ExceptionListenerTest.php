@@ -12,7 +12,7 @@
 namespace JavierEguiluz\Bundle\EasyAdminBundle\Tests\EventListener;
 
 use JavierEguiluz\Bundle\EasyAdminBundle\EventListener\ExceptionListener;
-use JavierEguiluz\Bundle\EasyAdminBundle\Exception\ElementNotFoundException as EasyEntityNotFoundException;
+use JavierEguiluz\Bundle\EasyAdminBundle\Exception\EntityNotFoundException as EasyEntityNotFoundException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
