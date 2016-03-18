@@ -4,10 +4,12 @@ namespace JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine;
 
 use Doctrine\ODM\MongoDB\Mapping\ClassMetadata;
 
-/**'
- * Class ODMClassMetadataWrapper
- * @package JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine
+/**
+ * Wrapping up the ClassMetadata to provide an unified interface.
+ *
+ * @author Thomas Parys <thomas.parys@wwsh.io>
  */
+
 class ODMClassMetadataWrapper implements ClassMetadataWrapperInterface
 {
     /**
