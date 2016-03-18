@@ -12,6 +12,7 @@
 namespace JavierEguiluz\Bundle\EasyAdminBundle\Form\Type\Configurator;
 
 use Doctrine\ORM\Mapping\ClassMetadata;
+use JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine\ClassMetadataWrapperInterface;
 use Symfony\Component\Form\FormConfigInterface;
 use Symfony\Component\Form\FormTypeGuesserInterface;
 
@@ -47,7 +48,7 @@ class EntityTypeConfigurator implements TypeConfiguratorInterface
             $options['em'] = $guessedOptions['em'];
         }
 
-        if ($metadata['associationType'] & ClassMetadata::TO_MANY) {
+        if ($metadata['associationType'] === ClassMetadataWrapperInterface::RELATION_TYPE_MANY) {
             $options['attr']['multiple'] = true;
         }
 
@@ -55,7 +56,7 @@ class EntityTypeConfigurator implements TypeConfiguratorInterface
         $options['attr']['data-widget'] = 'select2';
 
         // Configure "placeholder" option for entity fields
-        if (($metadata['associationType'] & ClassMetadata::TO_ONE)
+        if (($metadata['associationType'] === ClassMetadataWrapperInterface::RELATION_TYPE_ONE)
             && !isset($options[$placeHolderOptionName = $this->getPlaceholderOptionName()])
             && isset($options['required']) && false === $options['required']
         ) {
@@ -70,7 +71,7 @@ class EntityTypeConfigurator implements TypeConfiguratorInterface
      */
     public function supports($type, array $options, array $metadata)
     {
-        return 'entity' === $type && 'association' === $metadata['type'];
+        return 'entity' === $type && in_array($metadata['type'], ['association', 'association_odm']);
     }
 
     /**

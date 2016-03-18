@@ -69,20 +69,22 @@ class MongoClassMetadataWrapper implements ClassMetadataWrapperInterface
     }
 
     /**
-     * Common interface to provide a proper relation type code in the 
-     * config metadata parser.
+     * Returns an unified relation type.
      * 
-     * @param $relationType
+     * @param $doctrineType
      * @return string
      */
-    public function getAssociationMetadataTypeFor($relationType)
+    public function getEasyAssociationType($doctrineType)
     {
-        switch ($relationType) {
-            case ClassMetadataWrapperInterface::RELATION_TYPE_MANY:
-                return ClassMetadata::MANY;
+        if ($doctrineType & ClassMetadata::MANY) {
+            return self::RELATION_TYPE_MANY;
+        }
+
+        if ($doctrineType & ClassMetadata::ONE) {
+            return self::RELATION_TYPE_ONE;
         }
         
-        throw new \RuntimeException(sprintf('Association metadata type not implemented: %s', $relationType));
+        throw new \RuntimeException(sprintf('Association metadata type unknown: %s', $doctrineType));
     }
 
     /**

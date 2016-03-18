@@ -13,6 +13,7 @@ namespace JavierEguiluz\Bundle\EasyAdminBundle\Twig;
 
 use Doctrine\ORM\Mapping\ClassMetadata;
 use JavierEguiluz\Bundle\EasyAdminBundle\Configuration\Configurator;
+use JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine\ClassMetadataWrapperInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 
 /**
@@ -148,7 +149,9 @@ class EasyAdminTwigExtension extends \Twig_Extension
                 return $twig->render($entityConfiguration['templates']['label_empty'], $templateParameters);
             }
 
-            if ('association' === $fieldType) {
+            $isAssociation = 'association' === $fieldType || 'association_odm' === $fieldType;
+            
+            if (true === $isAssociation) {
                 $targetEntityConfig = $this->configurator->getEntityConfigByClass($fieldMetadata['targetEntity']);
                 if (null === $targetEntityConfig) {
                     // the associated entity is not managed by EasyAdmin
@@ -157,8 +160,8 @@ class EasyAdminTwigExtension extends \Twig_Extension
 
                 $isShowActionAllowed = $this->isActionEnabled($view, 'show', $targetEntityConfig['name']);
             }
-
-            if ('association' === $fieldType && ($fieldMetadata['associationType'] & ClassMetadata::TO_ONE)) {
+            
+            if (true === $isAssociation && ($fieldMetadata['associationType'] === ClassMetadataWrapperInterface::RELATION_TYPE_ONE)) {
                 // the try..catch block is required because we can't use
                 // $accessor->isReadable(), which is unavailable in Symfony 2.3
                 try {
@@ -183,7 +186,7 @@ class EasyAdminTwigExtension extends \Twig_Extension
                 }
             }
 
-            if ('association' === $fieldType && ($fieldMetadata['associationType'] & ClassMetadata::TO_MANY)) {
+            if (true === $isAssociation && ($fieldMetadata['associationType'] === ClassMetadataWrapperInterface::RELATION_TYPE_MANY)) {
                 // if the associated entity is managed by EasyAdmin, and the "show"
                 // action is enabled for the associated entity, display a link to it
                 if (null !== $targetEntityConfig && $isShowActionAllowed) {
