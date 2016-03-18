@@ -3,9 +3,12 @@
 namespace JavierEguiluz\Bundle\EasyAdminBundle\Configuration;
 
 /**
- * Class OdmConfigPass
- * @package JavierEguiluz\Bundle\EasyAdminBundle\Configuration
+ * Providing support the the 'documents' config entry.
+ * The entities are an abstract construct, hence all logic is applied to ODM
+ * documents as they were entities. Thanks to Javier for the tip!
  *
+ * @author Thomas Parys <thomas.parys@wwsh.io>
+ * 
  * By default the entity name is used as its label (showed in buttons, the
  * main menu, etc.). That's why the config format #3 can optionally define
  * a custom entity label

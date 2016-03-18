@@ -3,8 +3,10 @@
 namespace JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine;
 
 /**
- * Interface ClassMetadataWrapperInterface
- * @package JavierEguiluz\Bundle\EasyAdminBundle\Wrapper\Doctrine
+ * Wrapping up the ClassMetadata to provide an unified interface.
+ * The interface outlook.
+ *
+ * @author Thomas Parys <thomas.parys@wwsh.io>
  */
 interface ClassMetadataWrapperInterface
 {
