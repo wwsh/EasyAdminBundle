@@ -32,7 +32,6 @@ class Configuration implements ConfigurationInterface
         $this->addDesignSection($rootNode);
         $this->addViewsSection($rootNode);
         $this->addEntitiesSection($rootNode);
-        $this->addDocumentsSection($rootNode);
 
         return $treeBuilder;
     }
